@@ -1,7 +1,7 @@
-package pl.jzegzula.name_phonetically.name;
+package pl.jzegzula.name_phonetically.translator;
 
-import pl.jzegzula.name_phonetically.dictionaries.Dictionary;
-import pl.jzegzula.name_phonetically.dictionaries.LetterDictionary;
+import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -10,11 +10,11 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class PhoneticNameTranslator {
-  private final LetterDictionary languageToLanguageLetterReplacementsDictionary;
 
-  public PhoneticNameTranslator(Dictionary dictionary) {
-    this.languageToLanguageLetterReplacementsDictionary =
-            LetterDictionary.of(dictionary);
+  private final Map<String, String> languageToLanguageLetterReplacementsDictionary;
+
+  public PhoneticNameTranslator(Map<String, String> dictionary) {
+    this.languageToLanguageLetterReplacementsDictionary = dictionary;
   }
 
   public String replaceLetters(String input) {
@@ -24,22 +24,22 @@ public class PhoneticNameTranslator {
     StringBuilder result = new StringBuilder();
     while (matcher.find()) {
       matcher.appendReplacement(
-          result, languageToLanguageLetterReplacementsDictionary.words().get(matcher.group()));
+          result, languageToLanguageLetterReplacementsDictionary.get(matcher.group()));
     }
     matcher.appendTail(result);
 
-    return capitalizeWordsAccordingToOriginal(input,result.toString());
+    return capitalizeWordsAccordingToOriginal(input, result.toString());
   }
 
-  private Matcher createMatcher(String input, LetterDictionary dictionary) {
+  private Matcher createMatcher(String input, Map<String, String> dictionary) {
     String regex = createRegexFromDictionary(dictionary);
     Pattern pattern = Pattern.compile(regex);
     return pattern.matcher(input);
   }
 
-  private static String createRegexFromDictionary(LetterDictionary dictionary) {
+  private static String createRegexFromDictionary(Map<String, String> dictionary) {
     StringBuilder regexBuilder = new StringBuilder();
-    dictionary.words().keySet().forEach(key -> regexBuilder.append(key).append("|"));
+    dictionary.keySet().forEach(key -> regexBuilder.append(key).append("|"));
     return regexBuilder.deleteCharAt(regexBuilder.length() - 1).toString();
   }
 
@@ -60,12 +60,5 @@ public class PhoneticNameTranslator {
     if (!Character.isUpperCase(firstOriginalChar)) {
       return translated;
     } else return Character.toUpperCase(firstTranslatedChar) + translated.substring(1);
-  }
-
-  public String capitalizeEveryWord(String str) {
-
-    return Arrays.stream(str.split("\\s+"))
-        .map(word -> Character.toUpperCase(word.charAt(0)) + word.substring(1))
-        .collect(Collectors.joining(" "));
   }
 }
